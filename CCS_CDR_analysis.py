@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 import sys
@@ -43,7 +43,7 @@ import matplotlib.colors as mcolors
 import matplotlib as mpl
 
 
-# In[5]:
+# In[ ]:
 
 
 chrs_path=dict_path ## make a nested dictionary of stage IV, PCC-B1, and PCC-CPC paths and load it here, the keys should be datetime objects, and values should be file paths in .bin format
@@ -883,19 +883,19 @@ def cutting_map(arr):
 # In[11]:
 
 
-def images(THEEECK,df,lim=(0,120),_cmap='jet',res='day',rad_factor=1,give_me_cor=False,folder=None):
+def images(lv1_data,df,lim=(0,120),_cmap='jet',res='day',rad_factor=1,give_me_cor=False,folder=None):
     num=3
     sb.set_theme(style='white',palette='pastel')
-    fig=plt.figure(figsize=(6,2*len(THEEECK.keys())))
+    fig=plt.figure(figsize=(6,2*len(lv1_data.keys())))
     if res=='3hr':
-        fig=plt.figure(figsize=(6,2*len(THEEECK.keys())))
+        fig=plt.figure(figsize=(6,2*len(lv1_data.keys())))
     if res=='cdr':
-        fig=plt.figure(figsize=(8,2*len(THEEECK.keys())))
+        fig=plt.figure(figsize=(8,2*len(lv1_data.keys())))
         num=4
     pl=0
     axes=[]
-    for day,i in zip(THEEECK.keys(),range(len(THEEECK.keys()))):
-        for dataset in THEEECK[day].keys():
+    for day,i in zip(lv1_data.keys(),range(len(lv1_data.keys()))):
+        for dataset in lv1_data[day].keys():
             if res=='3hr':
                 latitude_values = df[df['date'] == day]['Latitude'].values
                 longitude_values = abs(df[df['date'] == day]['Longitude'].values)
@@ -907,17 +907,17 @@ def images(THEEECK,df,lim=(0,120),_cmap='jet',res='day',rad_factor=1,give_me_cor
                 longitude_values = abs(df[df['date'].dt.day == day.day]['Longitude'].values)
                 lon_min,lon_max=min(longitude_values)-rad_factor*rad,max(longitude_values)+rad_factor*rad
                 longitude_values=[np.mean([lon_min,lon_max])]
-            axes.append(plt.subplot2grid((len(THEEECK.keys()),len(THEEECK[day].keys())),(i,pl%num)))  
-            cax=axes[-1].imshow(THEEECK[day][dataset],cmap=_cmap,clim=lim)
-            axes[-1].set_yticks([THEEECK[day][dataset].shape[0]/2])
-            axes[-1].set_xticks([THEEECK[day][dataset].shape[1]/2])
+            axes.append(plt.subplot2grid((len(lv1_data.keys()),len(lv1_data[day].keys())),(i,pl%num)))  
+            cax=axes[-1].imshow(lv1_data[day][dataset],cmap=_cmap,clim=lim)
+            axes[-1].set_yticks([lv1_data[day][dataset].shape[0]/2])
+            axes[-1].set_xticks([lv1_data[day][dataset].shape[1]/2])
             font_properties = {'fontweight': 'ultralight', 'fontstyle': 'italic'}
             axes[-1].set_yticklabels([f'{lat} N' for lat in latitude_values],rotation=90,**font_properties)
             axes[-1].set_xticklabels([f'{lat} W' for lat in longitude_values],**font_properties)
             axes[-1].yaxis.set_tick_params(pad=0)
             axes[-1].xaxis.set_tick_params(pad=3)
             axes[-1].tick_params('both',direction='inout',which='major', length=5, width=2, colors='k',                                     grid_color='k', grid_alpha=1, bottom=True, left=True)
-            if pl//len(THEEECK[day].keys())==0:
+            if pl//len(lv1_data[day].keys())==0:
                 plt.title(dataset,weight="heavy")
             if dataset=='STAGE IV':
                 label=day
@@ -943,15 +943,15 @@ def images(THEEECK,df,lim=(0,120),_cmap='jet',res='day',rad_factor=1,give_me_cor
 # In[12]:
 
 
-def rmse_fun(THEEECK,ref):
+def rmse_fun(lv1_data,ref):
     rmse={}
-    for date in THEEECK.keys(): 
-        obs=THEEECK[date][ref].copy().flatten()
+    for date in lv1_data.keys(): 
+        obs=lv1_data[date][ref].copy().flatten()
 #         print(obs.shape)
         obs_mask=np.isnan(obs)
         rmse[date]={}
-        for dataset in [f for f in THEEECK[date].keys() if f!=ref]:
-            temp=THEEECK[date][dataset].copy().flatten()
+        for dataset in [f for f in lv1_data[date].keys() if f!=ref]:
+            temp=lv1_data[date][dataset].copy().flatten()
 #             print(dataset,temp.shape)
             common=obs_mask | np.isnan(temp)
             rmse[date][dataset]=np.sqrt(mean_squared_error(obs[~common], temp[~common]))#,squared=False)
@@ -961,17 +961,17 @@ def rmse_fun(THEEECK,ref):
 # In[13]:
 
 
-def skill_score_fun(THEEECK,ref,thres):
+def skill_score_fun(lv1_data,ref,thres):
     skill={}
-    for date in THEEECK.keys(): 
-        obs=THEEECK[date][ref].copy().flatten()
+    for date in lv1_data.keys(): 
+        obs=lv1_data[date][ref].copy().flatten()
         obs_mask=np.isnan(obs)
         obs[obs<thres]=-1
         obs[obs>=thres]=1
         obs[obs_mask]=np.nan
         skill[date]={}
-        for dataset in [f for f in THEEECK[date].keys() if f!=ref]:
-            temp=THEEECK[date][dataset].copy().flatten()
+        for dataset in [f for f in lv1_data[date].keys() if f!=ref]:
+            temp=lv1_data[date][dataset].copy().flatten()
             mask=np.isnan(temp)
             temp[temp<thres]=-1
             temp[temp>=thres]=1
@@ -1002,15 +1002,15 @@ def skill_score_fun(THEEECK,ref,thres):
 
 
 def mssim_fun(rr,ref):
-    THEEECK=rr.copy()
+    lv1_data=rr.copy()
     mssim={}
-    for date in THEEECK.keys(): 
-        obs=THEEECK[date][ref].copy()#.flatten()
+    for date in lv1_data.keys(): 
+        obs=lv1_data[date][ref].copy()#.flatten()
         obs_mask=np.isnan(obs)
         mssim[date]={}
-        for dataset in [f for f in THEEECK[date].keys() if f!=ref]:
+        for dataset in [f for f in lv1_data[date].keys() if f!=ref]:
             obs_copy=obs.copy()
-            pre=THEEECK[date][dataset].copy()
+            pre=lv1_data[date][dataset].copy()
             mask=np.isnan(obs_copy) | np.isnan(pre)
             obs_copy[mask]=-1
             pre[mask]=-1
@@ -1027,42 +1027,42 @@ def mssim_fun(rr,ref):
 # In[15]:
 
 
-def total_precipitation(THEEECK):
+def total_precipitation(lv1_data):
     total={}
-    for date in THEEECK.keys():
+    for date in lv1_data.keys():
         total[date]={}
-        for dataset in THEEECK[date].keys():
-#             total[date][dataset]=np.nansum(THEEECK[date][dataset])
-            total[date][dataset]=np.nanmean(THEEECK[date][dataset])/3
+        for dataset in lv1_data[date].keys():
+#             total[date][dataset]=np.nansum(lv1_data[date][dataset])
+            total[date][dataset]=np.nanmean(lv1_data[date][dataset])/3
     return total
 
 
 # In[16]:
 
 
-def percent(THEEECK):
+def percent(lv1_data):
     percent={}
-    for date in THEEECK.keys():
+    for date in lv1_data.keys():
         percent[date]={10:{},50:{},95:{},99:{}}
-        for dataset in THEEECK[date].keys():
-            percent[date][10][dataset]=np.nanpercentile(THEEECK[date][dataset], 10)
-            percent[date][50][dataset]=np.nanpercentile(THEEECK[date][dataset], 50)
-            percent[date][95][dataset]=np.nanpercentile(THEEECK[date][dataset], 95)
-            percent[date][99][dataset]=np.nanpercentile(THEEECK[date][dataset], 99)
+        for dataset in lv1_data[date].keys():
+            percent[date][10][dataset]=np.nanpercentile(lv1_data[date][dataset], 10)
+            percent[date][50][dataset]=np.nanpercentile(lv1_data[date][dataset], 50)
+            percent[date][95][dataset]=np.nanpercentile(lv1_data[date][dataset], 95)
+            percent[date][99][dataset]=np.nanpercentile(lv1_data[date][dataset], 99)
     return percent
 
 
 # In[17]:
 
 
-def cor_fun(THEEECK,ref):
+def cor_fun(lv1_data,ref):
     cor={}
-    for date in THEEECK.keys(): 
-        obs=THEEECK[date][ref].copy().flatten()
+    for date in lv1_data.keys(): 
+        obs=lv1_data[date][ref].copy().flatten()
         obs_mask=np.isnan(obs)
         cor[date]={}
-        for dataset in [f for f in THEEECK[date].keys() if f!=ref]:
-            temp=THEEECK[date][dataset].copy().flatten()
+        for dataset in [f for f in lv1_data[date].keys() if f!=ref]:
+            temp=lv1_data[date][dataset].copy().flatten()
             mask=np.isnan(temp)
             common=obs_mask | np.isnan(temp)
             cor[date][dataset],_=pearsonr(obs[~common], temp[~common])
@@ -1072,7 +1072,7 @@ def cor_fun(THEEECK,ref):
 # In[18]:
 
 
-def cor_plot(THEEECK,ref,res='daily',folder=None):
+def cor_plot(lv1_data,ref,res='daily',folder=None):
     num=2
     sb.set_theme(style='darkgrid',palette='deep')
     sb.set_context("paper",font_scale =2)
@@ -1084,22 +1084,22 @@ def cor_plot(THEEECK,ref,res='daily',folder=None):
         }
     _max=0
     string=' (mm)'
-    fig,axes,pl=plt.figure(figsize=(5*len(THEEECK.keys()),10)),[],0
+    fig,axes,pl=plt.figure(figsize=(5*len(lv1_data.keys()),10)),[],0
     if res=='cdr':
         num=3
-        fig=plt.figure(figsize=(5*len(THEEECK.keys()),15))
+        fig=plt.figure(figsize=(5*len(lv1_data.keys()),15))
     if res=='3hr':
-        fig=plt.figure(figsize=(5*len(THEEECK.keys()),15))
+        fig=plt.figure(figsize=(5*len(lv1_data.keys()),15))
         string=' (mm)'
-    for day,i in zip(THEEECK.keys(),range(len(THEEECK.keys()))):
-        obs=THEEECK[day][ref].copy().flatten()
+    for day,i in zip(lv1_data.keys(),range(len(lv1_data.keys()))):
+        obs=lv1_data[day][ref].copy().flatten()
         obs_mask=np.isnan(obs)
-        for dataset in [f for f in THEEECK[day].keys() if f!=ref]:
+        for dataset in [f for f in lv1_data[day].keys() if f!=ref]:
 #             print(day,dataset,i,pl%2)
-            temp=THEEECK[day][dataset].copy().flatten()
+            temp=lv1_data[day][dataset].copy().flatten()
             mask=np.isnan(temp)
             common=obs_mask | np.isnan(temp)
-            axes.append(plt.subplot2grid((num,len(THEEECK.keys())),(pl%num,i)))
+            axes.append(plt.subplot2grid((num,len(lv1_data.keys())),(pl%num,i)))
             _max=max(np.nanmax(np.concatenate((temp, obs))),_max)
             axes[-1].scatter(temp[~common],obs[~common], color=col[dataset],alpha=.1)
 #             axes[-1].set_title(f'{ref} vs. {dataset}')
@@ -1122,7 +1122,7 @@ def cor_plot(THEEECK,ref,res='daily',folder=None):
 # In[19]:
 
 
-def cdf_plot(THEEECK,ref,th1,th2,th3,folder=None):
+def cdf_plot(lv1_data,ref,th1,th2,th3,folder=None):
     sb.set_theme(style='darkgrid',palette='deep')
     col = {
             'PCC-B1': sb.color_palette()[0], # Dark Blue
@@ -1131,17 +1131,17 @@ def cdf_plot(THEEECK,ref,th1,th2,th3,folder=None):
             'P-CDR': sb.color_palette()[3],
         }
     fig,axes,pl=plt.figure(figsize=(30,30)),[],0
-    for day,i in zip(THEEECK.keys(),range(len(THEEECK.keys()))):
-        obs=THEEECK[day][ref].copy().flatten()
+    for day,i in zip(lv1_data.keys(),range(len(lv1_data.keys()))):
+        obs=lv1_data[day][ref].copy().flatten()
         for pl,th in zip(range(len([th1,th2,th3])),[th1,th2,th3]):
-            axes.append(plt.subplot2grid((len(THEEECK.keys()),3),(i,pl)))
+            axes.append(plt.subplot2grid((len(lv1_data.keys()),3),(i,pl)))
             obs_ecdf = sm.distributions.ECDF(obs[obs>=th])
             axes[-1].plot(obs_ecdf.x,obs_ecdf.y, color=col['STAGE IV'],label=ref)
-            for dataset in [f for f in THEEECK[day].keys() if f!=ref]:
-                temp=THEEECK[day][dataset].copy().flatten()
+            for dataset in [f for f in lv1_data[day].keys() if f!=ref]:
+                temp=lv1_data[day][dataset].copy().flatten()
                 temp_ecdf = sm.distributions.ECDF(temp[temp>=th])
                 axes[-1].plot(temp_ecdf.x,temp_ecdf.y,label=dataset,color=col[dataset])
-                if pl%len(THEEECK.keys())==0:
+                if pl%len(lv1_data.keys())==0:
                     label=day
                     label=label.strftime('%b-%d')
                     plt.ylabel(f'CDF for {label}')
@@ -1155,7 +1155,7 @@ def cdf_plot(THEEECK,ref,th1,th2,th3,folder=None):
 # In[20]:
 
 
-def pixel_count_plot(THEEECK,bins,folder=None):
+def pixel_count_plot(lv1_data,bins,folder=None):
     sb.set_theme(style='darkgrid',palette='deep')
     sb.set_context("paper",font_scale =2.5)
     col = {
@@ -1164,24 +1164,24 @@ def pixel_count_plot(THEEECK,bins,folder=None):
             'STAGE IV': sb.color_palette()[2],
             'P-CDR': sb.color_palette()[3],
         }
-    big_boy={}
-    big_boy=pd.DataFrame()
+    BIG_data={}
+    BIG_data=pd.DataFrame()
     fig,axes,pl=plt.figure(figsize=(30,30)),[],0
-    for day,i in zip(THEEECK.keys(),range(len(THEEECK.keys()))):
-        axes.append(plt.subplot2grid((len(THEEECK.keys()),3),(i,0)))
-        axes.append(plt.subplot2grid((len(THEEECK.keys()),3),(i,1)))
-        axes.append(plt.subplot2grid((len(THEEECK.keys()),3),(i,2)))
-        for dataset in [f for f in THEEECK[day].keys()]:
-            big_boy[dataset],_=np.histogram(THEEECK[day][dataset],bins=bins)
-            big_boy['bins']=bins[:-1]
-            bigger_boy = pd.melt(big_boy, id_vars=["bins"], var_name="Data Base", value_name="Pixel Count")
-        sb.barplot(x='bins',y='Pixel Count',hue="Data Base",data=bigger_boy[bigger_boy['bins']<.1],                   ax=axes[-3],palette=col)
+    for day,i in zip(lv1_data.keys(),range(len(lv1_data.keys()))):
+        axes.append(plt.subplot2grid((len(lv1_data.keys()),3),(i,0)))
+        axes.append(plt.subplot2grid((len(lv1_data.keys()),3),(i,1)))
+        axes.append(plt.subplot2grid((len(lv1_data.keys()),3),(i,2)))
+        for dataset in [f for f in lv1_data[day].keys()]:
+            BIG_data[dataset],_=np.histogram(lv1_data[day][dataset],bins=bins)
+            BIG_data['bins']=bins[:-1]
+            BIGGER_data = pd.melt(BIG_data, id_vars=["bins"], var_name="Data Base", value_name="Pixel Count")
+        sb.barplot(x='bins',y='Pixel Count',hue="Data Base",data=BIGGER_data[BIGGER_data['bins']<.1],                   ax=axes[-3],palette=col)
         if pl%3==0:
             label=day
             label=label.strftime('%b-%d')
             axes[-3].set_ylabel(f'Pixel Count for {label}',fontsize=25)
-        sb.barplot(x='bins',y='Pixel Count',hue="Data Base",                   data=bigger_boy[(bigger_boy['bins']>0) & (bigger_boy['bins']<bins[8])],ax=axes[-2],palette=col)
-        sb.barplot(x='bins',y='Pixel Count',hue="Data Base",                   data=bigger_boy[bigger_boy['bins']>bins[7]],ax=axes[-1],palette=col)
+        sb.barplot(x='bins',y='Pixel Count',hue="Data Base",                   data=BIGGER_data[(BIGGER_data['bins']>0) & (BIGGER_data['bins']<bins[8])],ax=axes[-2],palette=col)
+        sb.barplot(x='bins',y='Pixel Count',hue="Data Base",                   data=BIGGER_data[BIGGER_data['bins']>bins[7]],ax=axes[-1],palette=col)
     for ax,num in zip(axes,range(len(axes))):
         if num!=1:
             ax.get_legend().remove()
@@ -1448,7 +1448,7 @@ def cut_storm_box_25deg_daily(df_raw,day,rad_factor=1,chrs_path=chrs_path,conus_
 
 
 def ASLI(storm,year,force_date=False):
-    THEEECK={}
+    lv1_data={}
     folder_n=storm+'_daily_0.25'
     os.makedirs(os.path.join("/nfs/chrs-data3/shared/Bol/Analysis/climate/Figs",folder_n),exist_ok=True)
     storm_df=storm_info_04deg(storm,year,land=False)
@@ -1458,22 +1458,22 @@ def ASLI(storm,year,force_date=False):
     for day in date:
         temp_dict=cut_storm_box_25deg_daily(storm_df,day,rad_factor=4)
         if temp_dict is not None:
-            THEEECK[temp_dict['date']]={}
-            THEEECK[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PCC-CPC":temp_dict['PCC-CPC'],                                               "PCC-B1":temp_dict['PCC-B1']})
-    rmse=rmse_fun(THEEECK,'STAGE IV')
-    skill=skill_score_fun(THEEECK,'STAGE IV',0.1)
-    cor_value=cor_fun(THEEECK,'STAGE IV')
-    total=total_precipitation(THEEECK)
-    percent_val=percent(THEEECK)
+            lv1_data[temp_dict['date']]={}
+            lv1_data[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PCC-CPC":temp_dict['PCC-CPC'],                                               "PCC-B1":temp_dict['PCC-B1']})
+    rmse=rmse_fun(lv1_data,'STAGE IV')
+    skill=skill_score_fun(lv1_data,'STAGE IV',0.1)
+    cor_value=cor_fun(lv1_data,'STAGE IV')
+    total=total_precipitation(lv1_data)
+    percent_val=percent(lv1_data)
     aa=mine.c_map_maker(plt.get_cmap("tab20b"))
-    snapshot=images(THEEECK,_cmap=aa,df=storm_df,rad_factor=4,folder=folder_n)
-    cor_img=cor_plot(THEEECK,'STAGE IV',folder=folder_n)
-    pixel_img=pixel_count_plot(THEEECK,bins=[0,10,20,30,40,50,60,70,80,90,100,120,150,200],folder=folder_n)
+    snapshot=images(lv1_data,_cmap=aa,df=storm_df,rad_factor=4,folder=folder_n)
+    cor_img=cor_plot(lv1_data,'STAGE IV',folder=folder_n)
+    pixel_img=pixel_count_plot(lv1_data,bins=[0,10,20,30,40,50,60,70,80,90,100,120,150,200],folder=folder_n)
     metrics1_fig=metrics1(rmse,cor_value,0,folder=folder_n)
     total_fig=metrics2(total,folder=folder_n)
     skill_figure=skill_fig(skill,folder=folder_n)
     percent_figure=percentile_plot(percent_val,folder=folder_n)
-    return THEEECK
+    return lv1_data
 
 
 # ### results
@@ -1535,7 +1535,7 @@ def cut_storm_box_025deg_3hr(df_raw,day,rad_factor=1,chrs_path=chrs_path,conus_s
 def ASLI_025_3hourly(storm,year,land=True,force_date=False):
     folder_n=storm+'_3hr_0.25'
     os.makedirs(os.path.join("/nfs/chrs-data3/shared/Bol/Analysis/climate/Figs",folder_n),exist_ok=True)
-    THEEECK={}
+    lv1_data={}
     storm_df=storm_info_04deg(storm,year,land=land)
     date=storm_df['date']#.dt.day.unique()
     if force_date:
@@ -1543,15 +1543,15 @@ def ASLI_025_3hourly(storm,year,land=True,force_date=False):
     for day in date:
         temp_dict=cut_storm_box_025deg_3hr(storm_df,day,rad_factor=4)
         if temp_dict is not None:
-            THEEECK[temp_dict['date']]={}
-            THEEECK[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PCC-CPC":temp_dict['PCC-CPC'],                                               "PCC-B1":temp_dict['PCC-B1']})
-    rmse=rmse_fun(THEEECK,'STAGE IV')
-    skill=skill_score_fun(THEEECK,'STAGE IV',0.1)
-    cor_value=cor_fun(THEEECK,'STAGE IV')
-    total=total_precipitation(THEEECK)
-    percent_val=percent(THEEECK)
+            lv1_data[temp_dict['date']]={}
+            lv1_data[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PCC-CPC":temp_dict['PCC-CPC'],                                               "PCC-B1":temp_dict['PCC-B1']})
+    rmse=rmse_fun(lv1_data,'STAGE IV')
+    skill=skill_score_fun(lv1_data,'STAGE IV',0.1)
+    cor_value=cor_fun(lv1_data,'STAGE IV')
+    total=total_precipitation(lv1_data)
+    percent_val=percent(lv1_data)
     aa=mine.c_map_maker(plt.get_cmap("tab20b"))
-    snapshot=images(THEEECK,_cmap=aa,res='3hr',df=storm_df,folder=folder_n)
+    snapshot=images(lv1_data,_cmap=aa,res='3hr',df=storm_df,folder=folder_n)
     metrics1_fig=metrics1(rmse,cor_value,0,res='3hr',folder=folder_n)
     total_fig=metrics2(total,res='3hr',folder=folder_n)
     skill_figure=skill_fig(skill,res='3hr',folder=folder_n)
@@ -1624,7 +1624,7 @@ def cut_storm_box_04deg_daily(df_raw,day,rad_factor=1,zoom_factor=1/6.25,chrs_pa
 def ASLI_04_daily(storm,year,force_date=False,land=True):
     folder_n=storm+'_daily_0.4'
     os.makedirs(os.path.join("/nfs/chrs-data3/shared/Bol/Analysis/climate/Figs",folder_n),exist_ok=True)
-    THEEECK={}
+    lv1_data={}
     storm_df=storm_info_04deg(storm,year,land=False)
     date=storm_df['date'].dt.day.unique()
     if force_date:
@@ -1632,23 +1632,23 @@ def ASLI_04_daily(storm,year,force_date=False,land=True):
     for day in date:
         temp_dict=cut_storm_box_04deg_daily(storm_df,day,rad_factor=4)
         if temp_dict is not None:
-            THEEECK[temp_dict['date']]={}
-            THEEECK[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PCC-CPC":temp_dict['PCC-CPC'],                                               "PCC-B1":temp_dict['PCC-B1'],"P-CDR":temp_dict['P-CDR']})
-    rmse=rmse_fun(THEEECK,'STAGE IV')
-    skill=skill_score_fun(THEEECK,'STAGE IV',0.1)
-    cor_value=cor_fun(THEEECK,'STAGE IV')
-    total=total_precipitation(THEEECK)
-    percent_val=percent(THEEECK)
+            lv1_data[temp_dict['date']]={}
+            lv1_data[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PCC-CPC":temp_dict['PCC-CPC'],                                               "PCC-B1":temp_dict['PCC-B1'],"P-CDR":temp_dict['P-CDR']})
+    rmse=rmse_fun(lv1_data,'STAGE IV')
+    skill=skill_score_fun(lv1_data,'STAGE IV',0.1)
+    cor_value=cor_fun(lv1_data,'STAGE IV')
+    total=total_precipitation(lv1_data)
+    percent_val=percent(lv1_data)
     aa=mine.c_map_maker(plt.get_cmap("tab20b"))
-    snapshot=images(THEEECK,_cmap=aa,res='cdr',df=storm_df,folder=folder_n)
-    cor_img=cor_plot(THEEECK,'STAGE IV',res='cdr',folder=folder_n)
-    cdf_img=cdf_plot(THEEECK,'STAGE IV',.1,1,10,folder=folder_n)
-    pixel_img=pixel_count_plot(THEEECK,bins=[0,10,20,30,40,50,60,70,80,90,100,120,150,200],folder=folder_n)
+    snapshot=images(lv1_data,_cmap=aa,res='cdr',df=storm_df,folder=folder_n)
+    cor_img=cor_plot(lv1_data,'STAGE IV',res='cdr',folder=folder_n)
+    cdf_img=cdf_plot(lv1_data,'STAGE IV',.1,1,10,folder=folder_n)
+    pixel_img=pixel_count_plot(lv1_data,bins=[0,10,20,30,40,50,60,70,80,90,100,120,150,200],folder=folder_n)
     metrics1_fig=metrics1(rmse,cor_value,0,folder=folder_n)
     total_fig=metrics2(total,folder=folder_n)
     skill_figure=skill_fig(skill,folder=folder_n)
     percent_figure=percentile_plot(percent_val,folder=folder_n)
-    return THEEECK
+    return lv1_data
 
 
 # ### results
@@ -1720,4 +1720,279 @@ plt.xlabel("")
 plt.ylabel("")
 plt.xticks([])
 plt.yticks([])
+
+
+# # Stuff
+
+# In[ ]:
+
+
+p1=Illinois_SHAPEFILE
+p2=INDIANA_SHAPEFILE
+p3=MICHIGAN_SHAPEFILE
+p4=WISCONSIN_SHAPEFILE
+mask_p=p1 | p2 | p3 | p4 
+mask_p=np.roll(mask_p,int(mask_p.shape[1]/2))
+plt.figure()
+plt.imshow(mask_p)
+
+S1=Illinois_SHAPEFILE_ST4
+S2=INDIANA_SHAPEFILE_ST4
+S3=MICHIGAN_SHAPEFILE_ST4
+S4=WISCONSIN_SHAPEFILE_ST4
+mask_st4=s1 | s2 | s3 | s4
+plt.figure()
+plt.imshow(mask_st4)
+
+del p1,p2,p3,p4,s1,s2,s3,s4
+
+
+# In[ ]:
+
+
+st4_3hr=st4_3hr_DICT
+
+
+# In[ ]:
+
+
+def cutting(arr,mask):
+    arr[~mask]=np.nan
+    non_blank_indices = np.where(mask)
+    try:
+        min_x, min_y = np.min(non_blank_indices, axis=1)
+        max_x, max_y = np.max(non_blank_indices, axis=1)
+    except ValueError:
+        min_x, min_y =42 ,221 
+        max_x, max_y= 138, 451
+    finally:
+        return arr[min_x:max_x, min_y:max_y]
+
+
+# In[ ]:
+
+
+def cut_region_3hr(date,chrs_path=chrs_path,mask_st4=mask_st4,mask_per=mask_p,st4_3hr=st4_3hr):
+#     print(st4_3hr[date])
+    st4=mine.load_gz(st4_3hr[date],feed_back=False)
+    st4=cutting(st4,mask_st4)
+    st4=st4*3
+    cpc=mine.load_gz(chrs_path['ccs_cdr_cpc_3hr'][date],feed_back=False)/100*3
+    cpc=cutting(cpc,mask_per)
+    b1=mine.load_gz(chrs_path['ccs_cdr_b1_3hr'][date],feed_back=False)/100*3
+    b1=cutting(b1,mask_per)
+#     print(st4.shape,b1.shape,cpc.shape)
+#     if not (np.isnan(st4).all() and np.isnan(cpc).all() and np.isnan(b1).all()):
+#         b1,cpc,st4=cutting_map(b1),cutting_map(cpc),cutting_map(st4)
+#         if b1.shape!=st4.shape:
+#             b1=b1[:st4.shape[0],:st4.shape[1]]
+#         if cpc.shape!=st4.shape:
+#             cpc=cpc[:st4.shape[0],:st4.shape[1]]
+#         if cpc.shape!=st4.shape:
+#             st4=st4[:cpc.shape[0],:cpc.shape[1]]
+    _dict={'STAGE IV':st4,'PERSIANN-CCS-CDR-CPC':cpc,"PERSIANN-CCS-CDR-B1":b1,'date':date}
+    return _dict
+#     else:
+#         print('empty array')
+    
+
+
+# In[ ]:
+
+
+def metrics1(rmse,cor_value,mssim,res='daily',folder=None):
+    mssim=rmse.copy()
+    sb.set_context("paper",font_scale =3)
+    sb.set_theme(style='darkgrid',palette='deep')
+    varss={"RMSE":rmse,"C.C.":cor_value}#,"MSSIM":mssim}
+    col = {
+            'PERSIANN-CCS-CDR-B1': sb.color_palette()[0], # Dark Blue
+            'PERSIANN-CCS-CDR-CPC': sb.color_palette()[1],
+            'STAGE IV': sb.color_palette()[2],
+            'PERSIANN CDR': sb.color_palette()[3],
+        }
+    fig,axes=plt.figure(figsize=(10*1.5,5*1.5)),[]
+    for var,pl in zip(varss.keys(),range(len(varss.keys()))):
+        axes.append(plt.subplot2grid((1,2),(0,pl)))
+        cpc,b1,days,cdr=[],[],[],[]
+        for day in varss[var].keys():
+            days.append(day)
+            cpc.append(varss[var][day]['PERSIANN-CCS-CDR-CPC'])
+            b1.append(varss[var][day]['PERSIANN-CCS-CDR-B1'])
+            try:
+                cdr.append(varss[var][day]['PERSIANN CDR'])
+            except:
+                alaki=0
+        axes[-1].plot(days,cpc,marker='o',color=col['PERSIANN-CCS-CDR-CPC'],label='PERSIANN-CCS-CDR-CPC')
+        axes[-1].plot(days,b1,marker='o',color=col['PERSIANN-CCS-CDR-B1'],label='PERSIANN-CCS-CDR-B1')
+        if len(cdr)>0:
+            axes[-1].plot(days,cdr,marker='o',color=col['PERSIANN CDR'],label='PERSIANN CDR')
+        axes[-1].set_title(var,fontsize=25)
+        axes[-1].set_xticks(days)
+        if var=='RMSE':
+            axes[-1].set_ylabel('mm',fontsize=20)
+            if res=='3hr':
+                axes[-1].set_ylabel('mm',fontsize=20)
+        axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        if res=='3hr':
+            axes[-1].set_xticks(days[::5])
+            axes[-1].set_xticklabels(days[::5])
+            axes[-1].xaxis.set_major_formatter(mdates.DateFormatter('%b-%d-%H'))
+            for label in axes[-1].get_xticklabels():
+                label.set_rotation(90)
+        axes[-1].tick_params(axis='both', labelsize=20)
+    axes[0].legend()   
+#     plt.show()
+#     mine.save_fig(os.path.join(folder,"metrics1"))
+    save_fig(os.path.join(folder,"metrics1"),tight_layout=True)
+    return fig
+
+
+# In[ ]:
+
+
+def percentile_plot(percent_val,res='day',folder=None):
+    sb.set_context("paper",font_scale =3)
+    sb.set_theme(style='darkgrid',palette='deep')
+    col = {
+            'PERSIANN-CCS-CDR-B1': sb.color_palette()[0], # Dark Blue
+            'PERSIANN-CCS-CDR-CPC': sb.color_palette()[1],
+            'STAGE IV': sb.color_palette()[2],
+            'PERSIANN CDR': sb.color_palette()[3],
+        }
+    fig,axes,pl,_=plt.figure(figsize=(17,5)),[],0,True
+    if res=='3hr':
+        fig,axes,pl,_=plt.figure(figsize=(10*1.5,5*1.5)),[],0,True
+    axes.append(plt.subplot2grid((1,2),(0,0)))
+    axes.append(plt.subplot2grid((1,2),(0,1)))
+#     axes.append(plt.subplot2grid((1,3),(0,2)))
+    for per,i in zip([95,99],range(3)):
+        cpc,b1,st4,days,cdr=[],[],[],[],[]
+        for day in percent_val.keys():
+            days.append(day)
+            cpc.append(percent_val[day][per]['PERSIANN-CCS-CDR-CPC'])
+            b1.append(percent_val[day][per]['PERSIANN-CCS-CDR-B1'])
+            st4.append(percent_val[day][per]['STAGE IV'])
+            try:
+                cdr.append(percent_val[day][per]['PERSIANN CDR'])
+            except:
+                alaki=1
+        axes[i].set_title(f'{per}$^{{th}}$ Percentile',fontsize=25)
+        axes[i].plot(days,cpc,color=col['PERSIANN-CCS-CDR-CPC'],label='PERSIANN-CCS-CDR-CPC',marker='o')
+        axes[i].plot(days,st4,color=col['STAGE IV'],label='STAGE IV',marker='o')
+        axes[i].plot(days,b1,color=col['PERSIANN-CCS-CDR-B1'],label='PERSIANN-CCS-CDR-B1',marker='o')
+        try:
+            axes[i].plot(days,cdr,color=col['PERSIANN CDR'],label='PERSIANN CDR',marker='o')
+        except:
+            alaki=1
+        axes[i].set_xticks(days)
+        axes[i].xaxis.set_major_formatter(mdates.DateFormatter('%b-%d'))
+        axes[i].set_ylabel('mm',fontsize=25)
+        if res=='3hr':
+            axes[i].set_ylabel('mm',fontsize=25)
+            axes[i].set_xticks(days[::5])
+            axes[i].set_xticklabels(days[::5])
+            axes[i].xaxis.set_major_formatter(mdates.DateFormatter('%b-%d-%H'))
+            axes[i].tick_params(axis='x', rotation=90)
+        axes[i].tick_params(axis='both', labelsize=20)
+        
+    handles1, labels1 = axes[0].get_legend_handles_labels()
+    axes[0].legend(handles=handles1,labels=labels1)  
+#     plt.show()
+    save_fig(os.path.join(folder,"percentile_plot"),tight_layout=_,folder=None)
+#     return fig
+
+
+# In[ ]:
+
+
+def region_event_3hr(dates,name):
+    lv1_data={}
+    folder_n=name+'_daily_0.25'
+    os.makedirs(os.path.join(PATH_TO_YOUR_FOLDER,folder_n),exist_ok=True)
+    for day in dates:
+            temp_dict=cut_region_3hr(day)
+            if temp_dict is not None:
+                lv1_data[temp_dict['date']]={}
+                lv1_data[temp_dict['date']].update({'STAGE IV':temp_dict['STAGE IV'],"PERSIANN-CCS-CDR-CPC":temp_dict['PERSIANN-CCS-CDR-CPC'],                                                   "PERSIANN-CCS-CDR-B1":temp_dict['PERSIANN-CCS-CDR-B1']})
+    rmse=rmse_fun(lv1_data,'STAGE IV')
+    skill=skill_score_fun(lv1_data,'STAGE IV',0.1)
+    cor_value=cor_fun(lv1_data,'STAGE IV')
+    total=total_precipitation(lv1_data)
+    percent_val=percent(lv1_data)
+    images(lv1_data,res='3hr',folder=YOUR_FOLDER)
+    metrics1_fig=metrics1(rmse,cor_value,0,res='3hr',folder=folder_n)
+    total_fig=metrics2(total,res='3hr',folder=folder_n)
+    skill_figure=skill_fig(skill,res='3hr',folder=folder_n)
+    percent_figure=percentile_plot(percent_val,res='3hr',folder=folder_n)     
+    return lv1_data
+
+
+# In[ ]:
+
+
+dates=[datetime(2024,7,day,hr) for day in range(13,17) for hr in range(0,24,3)]
+dates=[date for date in dates if date<datetime(2024,7,16,21) and date>datetime(2024,7,13,14)]
+
+
+# In[ ]:
+
+
+data31=region_event_3hr(dates,'mid_3hr')
+
+
+# In[ ]:
+
+
+cc=mine.c_map_maker(plt.get_cmap('coolwarm'))
+def images(lv1_data,lim=(0,50),_cmap=cc,res='day',rad_factor=1,give_me_cor=False,folder=None):
+    num=3
+    sb.set_theme(style='white',palette='pastel')
+    fig=plt.figure(figsize=(6,2*len(lv1_data.keys())))
+    if res=='3hr':
+        fig=plt.figure(figsize=(6,2*len(lv1_data.keys())))
+    pl=0
+    axes=[]
+    for day,i in zip(lv1_data.keys(),range(len(lv1_data.keys()))):
+        for dataset in lv1_data[day].keys():
+            axes.append(plt.subplot2grid((len(lv1_data.keys()),len(lv1_data[day].keys())),(i,pl%num)))  
+            cax=axes[-1].imshow(lv1_data[day][dataset],cmap=_cmap,clim=lim)
+            axes[-1].set_yticks([lv1_data[day][dataset].shape[0]/2])
+            axes[-1].set_xticks([lv1_data[day][dataset].shape[1]/2])
+            font_properties = {'fontweight': 'ultralight', 'fontstyle': 'italic'}
+            if pl//len(lv1_data[day].keys())==0:
+                plt.title(dataset,fontsize=8,weight="heavy")
+            if dataset=='STAGE IV':
+                label=day
+                if res=='3hr':
+                    label=label.strftime('%b-%d-%H')
+                    plt.ylabel(label+" hr")
+                else:
+                    label=label.strftime('%b-%d')
+                    plt.ylabel(label)
+            pl+=1
+    if not give_me_cor:
+        for ax in axes:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.tick_params(bottom=False, left=False)
+    cbar = fig.colorbar(cax, ax=axes, orientation='vertical', fraction=0.02, pad=0.04)
+    cbar.set_label('mm')
+    if res=='3hr':
+        cbar.set_label('mm')
+#     plt.show(fig)
+    save_fig(os.path.join(folder,"snapshot_midwest"),folder=None,tight_layout=False)
+#     return fig
+
+
+# In[ ]:
+
+
+images(data31,res='3hr',folder=YOUR_FOLDER)
+
+
+# In[ ]:
+
+
+
 
