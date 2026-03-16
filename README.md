@@ -6,6 +6,8 @@ This repository contains code and resources related to the PERSIANN-CCS-CDR V2.0
 
 If you find this work or the dataset useful for your research, please cite the following paper:
 
+https://doi.org/10.1038/s41597-026-06625-5
+
 
     Bolboli Zadeh, M., Nguyen, P., Hsu, KL. et al. A Global High-Resolution Precipitation Climate Record: PERSIANN-CCS-CDR Version 2.0. Sci Data 13, 314 (2026). https://doi.org/10.1038/s41597-026-06625-5
 
